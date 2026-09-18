@@ -1,4 +1,5 @@
 import pandas as pd 
+pd.set_option('future.no_silent_downcasting', True)
 
 def drop_full_duplicates(df,log):
     before= len(df)
@@ -19,12 +20,7 @@ def flag_semi_duplicates(df,key_column,log):
     return df, log
 
 
-if __name__ == "__main__":
-    df1=pd.read_csv(r"C:/Users/Aone/Desktop/retail project/data/raw/olist_orders_dataset.csv")
-    log=[]
-    df1,log=drop_full_duplicates(df1,log)
-    df1,log=flag_semi_duplicates(df1,'order_id',log)
-    print(log)
+
 
 def handle_missing_values(df,log):
     
@@ -32,14 +28,18 @@ def handle_missing_values(df,log):
     missing_values= df.isnull().sum()
     for column in df.columns:
         null_perc= (missing_values[column]/len(df))*100
-        print(f"CHECKING: {column} -> {null_perc:.2f}%")
-        if null_perc >=100:
+
+        if null_perc ==100:
             df= df.drop(columns=column)
             log.append(f"Dropped column '{column}' with {null_perc:.2f}% missing values")
         elif null_perc>40:
             log.append(f"Flagged column '{column}' — {null_perc:.2f}% missing, needs manual review")
-        elif null_perc<40 and null_perc>0:
-            if df[column].dtype in ['int64','float64']:
+        elif null_perc<=40 and null_perc>0:
+            unique_vals = df[column].dropna().unique()
+            if len(unique_vals) == 2 and set(unique_vals) <= {True, False}:
+                df[column] = df[column].fillna(False).astype(bool)
+                log.append(f"Filled {missing_values[column]} nulls in '{column}' with False (boolean-like column, missing interpreted as False)")
+            elif df[column].dtype in ['int64','float64']:
                 uniqueness_ratio = df[column].nunique() / len(df)
                 if uniqueness_ratio>0.90:
                     log.append(f"Flagged column '{column}' — {null_perc:.2f}% missing, high uniqueness ratio ({uniqueness_ratio:.2f}), needs manual review")
@@ -47,17 +47,24 @@ def handle_missing_values(df,log):
                     median_val = df[column].median()
                     df[column] = df[column].fillna(median_val)
                     log.append(f"Filled {missing_values[column]} nulls in '{column}' with median ({median_val})")
-        elif null_perc==0:
+            else:
+                df[column] = df[column].fillna('Unknown')
+                log.append(f"Column '{column}' has {null_perc:.2f}% missing values — filled with 'Unknown'")
+        elif null_perc == 0:
             log.append(f"Column '{column}' has no missing values")
-        else:
-            log.append(f"Column '{column}' has {null_perc:.2f}% missing values — no fill strategy applied yet (non-numeric)")
-    return df,log
+    return df, log
 
-df2 = pd.read_csv(r"C:/Users/Aone/Desktop/retail project/data/raw/retail_store_sales.csv")
-log2 = []
-df2, log2 = handle_missing_values(df2, log2)
-print(log2)
+if __name__ == "__main__":
+    df1=pd.read_csv(r"C:/Users/Aone/Desktop/retail project/data/raw/olist_orders_dataset.csv")
+    log=[]
+    df1,log=drop_full_duplicates(df1,log)
+    df1,log=flag_semi_duplicates(df1,'order_id',log)
+    print(log)
+
+    df2 = pd.read_csv(r"C:/Users/Aone/Desktop/retail project/data/raw/retail_store_sales.csv")
+    log2 = []
+    df2, log2 = handle_missing_values(df2, log2)
+    print(log2)
 
 
-print(len(log2), len(df2.columns))
 
