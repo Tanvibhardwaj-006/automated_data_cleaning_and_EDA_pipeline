@@ -1,6 +1,8 @@
 import pandas as pd 
 pd.set_option('future.no_silent_downcasting', True)
 
+# completeness 
+
 def drop_full_duplicates(df,log):
     before= len(df)
     df = df.drop_duplicates()
@@ -20,8 +22,7 @@ def flag_semi_duplicates(df,key_column,log):
     return df, log
 
 
-
-
+    
 def handle_missing_values(df,log):
     
     
@@ -41,7 +42,7 @@ def handle_missing_values(df,log):
                 log.append(f"Filled {missing_values[column]} nulls in '{column}' with False (boolean-like column, missing interpreted as False)")
             elif df[column].dtype in ['int64','float64']:
                 uniqueness_ratio = df[column].nunique() / len(df)
-                if uniqueness_ratio>0.90:
+                if uniqueness_ratio>=0.90:
                     log.append(f"Flagged column '{column}' — {null_perc:.2f}% missing, high uniqueness ratio ({uniqueness_ratio:.2f}), needs manual review")
                 else:
                     median_val = df[column].median()
@@ -54,17 +55,31 @@ def handle_missing_values(df,log):
             log.append(f"Column '{column}' has no missing values")
     return df, log
 
+def fix_dtypes(df, log):
+    for column in df.columns:
+        if df[column].dtype == 'object':
+            converted = pd.to_datetime(df[column], errors='coerce',format='mixed')
+            success_rate = converted.notna().sum() / len(df)
+            if success_rate >= 0.8:
+                failed_count = converted.isna().sum() - df[column].isna().sum()  # newly-failed, not originally-null
+                df[column] = converted
+                log.append(f"Converted column '{column}' to datetime (success rate: {success_rate:.2f}, {failed_count} values could not be parsed and became NaT)")
+    return df, log
+            
+
+
+
 if __name__ == "__main__":
     df1=pd.read_csv(r"C:/Users/Aone/Desktop/retail project/data/raw/olist_orders_dataset.csv")
     log=[]
     df1,log=drop_full_duplicates(df1,log)
     df1,log=flag_semi_duplicates(df1,'order_id',log)
+    df1,log=fix_dtypes(df1,log)
+    print(df1.dtypes)
     print(log)
 
-    df2 = pd.read_csv(r"C:/Users/Aone/Desktop/retail project/data/raw/retail_store_sales.csv")
-    log2 = []
-    df2, log2 = handle_missing_values(df2, log2)
-    print(log2)
+    
+
 
 
 
