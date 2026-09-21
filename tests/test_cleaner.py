@@ -3,7 +3,7 @@ import numpy as np
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
-from cleaner import drop_full_duplicates, flag_semi_duplicates, handle_missing_values
+from cleaner import drop_full_duplicates, fix_dtypes, flag_semi_duplicates, handle_missing_values
 
 def test_drop_full_duplicates():
     test_df = pd.DataFrame({
@@ -45,9 +45,68 @@ def test_handle_missing_values():
     assert any("Empty_Column" in entry for entry in log), "100% null column is not dropped"
     print("test_handle_missing_values passed")
 
-   
+def test_fix_dtypes():
+    test_df=pd.DataFrame({
+        "Order_Date": [
+        "2024-01-01",
+        "2024-01-02",
+        "2024-01-03",
+        "2024-01-04",
+        "2024-01-05",
+        "2024-01-06",
+        "2024-01-07",
+        "2024-01-08",
+        "not a date",
+        "2024-01-10"
+    ],
+    "Category": [
+        "Food",
+        "Clothing",
+        "Food",
+        "Books",
+        "Food",
+        "Books",
+        "Clothing",
+        "Food",
+        "Books",
+        "Clothing"
+    ],
+    "Customer_Note": [
+        "2024-02-01",
+        "hello",
+        "good",
+        "2024-02-04",
+        "nice",
+        "bad",
+        "2024-02-07",
+        "okay",
+        "fine",
+        "great"
+    ],
+    "Messy_Date": 
+    [
+        "2024-01-01",
+        "hello",
+        "???",
+        "@@@",
+        "not-a-date",
+        "blah blah ",
+        "zumbaaaaa",
+        "knock knock ",
+        "tinkerbell",
+        "rapunzel"
+    ]
+    })
+    result_df ,log = fix_dtypes(test_df, [])
+    assert result_df["Order_Date"].dtype == "datetime64[ns]", "Order_Date not converted to datetime"
+    assert result_df["Customer_Note"].dtype == "object", "Customer_Note should remain as object"    
+    assert  not any("Customer_Note" in entry and "converted to datetime" in entry for entry in log),"Customer_Note  converted into datetime despite < 0.8 of values being date-like"
+    assert any ("error while processing  column messy date " in entry for entry in log),"messy date error was not logged"
+    print("test_fix_dtypes passed")
+
 
 if __name__ == "__main__":
     test_drop_full_duplicates()
     test_flag_semi_duplicates()
     test_handle_missing_values()
+    test_fix_dtypes()

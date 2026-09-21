@@ -22,7 +22,7 @@ def flag_semi_duplicates(df,key_column,log):
     return df, log
 
 
-    
+
 def handle_missing_values(df,log):
     
     
@@ -58,14 +58,32 @@ def handle_missing_values(df,log):
 def fix_dtypes(df, log):
     for column in df.columns:
         if df[column].dtype == 'object':
-            converted = pd.to_datetime(df[column], errors='coerce',format='mixed')
-            success_rate = converted.notna().sum() / len(df)
-            if success_rate >= 0.8:
-                failed_count = converted.isna().sum() - df[column].isna().sum()  # newly-failed, not originally-null
-                df[column] = converted
-                log.append(f"Converted column '{column}' to datetime (success rate: {success_rate:.2f}, {failed_count} values could not be parsed and became NaT)")
+            try:
+                # quick sample check first 
+                sample = df[column].dropna().head(20)
+                sample_converted = pd.to_datetime(sample, errors='coerce', format='mixed')
+                sample_success_rate = sample_converted.notna().sum() / len(sample) if len(sample) > 0 else 0
+
+                if sample_success_rate < 0.5:
+                    continue 
+
+                converted = pd.to_datetime(df[column], errors='coerce', format='mixed')
+                success_rate = converted.notna().sum() / len(df)
+
+                if success_rate >= 0.8:
+                    failed_count = converted.isna().sum() - df[column].isna().sum()
+                    df[column] = converted
+                    log.append(f"Converted column '{column}' to datetime (success rate: {success_rate:.2f}, {failed_count} values could not be parsed and became NaT)")
+
+            except Exception as e:
+                log.append(f"Column '{column}' could not be evaluated for datetime conversion ({type(e).__name__})")
+                continue
+
     return df, log
             
+
+
+ 
 
 
 
