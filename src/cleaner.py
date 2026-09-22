@@ -1,3 +1,4 @@
+
 import pandas as pd 
 pd.set_option('future.no_silent_downcasting', True)
 
@@ -36,21 +37,24 @@ def handle_missing_values(df,log):
         elif null_perc>40:
             log.append(f"Flagged column '{column}' — {null_perc:.2f}% missing, needs manual review")
         elif null_perc<=40 and null_perc>0:
-            unique_vals = df[column].dropna().unique()
-            if len(unique_vals) == 2 and set(unique_vals) <= {True, False}:
-                df[column] = df[column].fillna(False).astype(bool)
-                log.append(f"Filled {missing_values[column]} nulls in '{column}' with False (boolean-like column, missing interpreted as False)")
-            elif df[column].dtype in ['int64','float64']:
-                uniqueness_ratio = df[column].nunique() / len(df)
-                if uniqueness_ratio>=0.90:
-                    log.append(f"Flagged column '{column}' — {null_perc:.2f}% missing, high uniqueness ratio ({uniqueness_ratio:.2f}), needs manual review")
-                else:
-                    median_val = df[column].median()
-                    df[column] = df[column].fillna(median_val)
-                    log.append(f"Filled {missing_values[column]} nulls in '{column}' with median ({median_val})")
+            if df[column].dtype == 'datetime64[ns]':
+                log.append(f"Column '{column}' has {missing_values[column]} missing dates (NaT) — left as-is, missingness treated as meaningful")
             else:
-                df[column] = df[column].fillna('Unknown')
-                log.append(f"Column '{column}' has {null_perc:.2f}% missing values — filled with 'Unknown'")
+                unique_vals = df[column].dropna().unique()
+                if len(unique_vals) == 2 and set(unique_vals) <= {True, False}:
+                    df[column] = df[column].fillna(False).astype(bool)
+                    log.append(f"Filled {missing_values[column]} nulls in '{column}' with False (boolean-like column, missing interpreted as False)")
+                elif df[column].dtype in ['int64','float64']:
+                    uniqueness_ratio = df[column].nunique() / len(df)
+                    if uniqueness_ratio>=0.90:
+                        log.append(f"Flagged column '{column}' — {null_perc:.2f}% missing, high uniqueness ratio ({uniqueness_ratio:.2f}), needs manual review")
+                    else:
+                        median_val = df[column].median()
+                        df[column] = df[column].fillna(median_val)
+                        log.append(f"Filled {missing_values[column]} nulls in '{column}' with median ({median_val})")
+                else:
+                    df[column] = df[column].fillna('Unknown')
+                    log.append(f"Column '{column}' has {null_perc:.2f}% missing values — filled with 'Unknown'")
         elif null_perc == 0:
             log.append(f"Column '{column}' has no missing values")
     return df, log
@@ -82,8 +86,21 @@ def fix_dtypes(df, log):
     return df, log
             
 
+def flag_faulty_dates(df, log):
+    for column in df.select_dtypes(include=['datetime64[ns]']).columns:
+        if df[column].isnull().any():
+            log.append(f"Column '{column}' has NaT values, which may indicate parsing issues or missing dates")
+    if 'order_purchase_timestamp' in df.columns and 'order_approved_at' in df.columns:
+        faulty_approval = df['order_approved_at'] < df['order_purchase_timestamp']
+        log.append(f"Flagged {faulty_approval.sum()} rows where 'order_approved_at' is before 'order_purchase_timestamp'")
+    if 'order_delivered_carrier_date' in df.columns and 'order_approved_at' in df.columns:
+        faulty_carrier = df['order_approved_at'] > df['order_delivered_carrier_date']
+        log.append(f"Flagged {faulty_carrier.sum()} rows where 'order_approved_at' is after 'order_delivered_carrier_date'")
+    if 'order_delivered_customer_date' in df.columns and 'order_delivered_carrier_date' in df.columns:
+        faulty_customer = df['order_delivered_carrier_date'] > df['order_delivered_customer_date']
+        log.append(f"Flagged {faulty_customer.sum()} rows where 'order_delivered_carrier_date' is after 'order_delivered_customer_date'")
 
- 
+    return df, log
 
 
 
@@ -93,9 +110,12 @@ if __name__ == "__main__":
     df1,log=drop_full_duplicates(df1,log)
     df1,log=flag_semi_duplicates(df1,'order_id',log)
     df1,log=fix_dtypes(df1,log)
-    print(df1.dtypes)
+    df1,log=handle_missing_values(df1,log)
+    
+    df1,log=flag_faulty_dates(df1,log)
     print(log)
 
+print(df1['order_approved_at'].dtype)  
     
 
 

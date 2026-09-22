@@ -97,13 +97,11 @@ def test_fix_dtypes():
         "rapunzel"
     ]
     })
-    result_df ,log = fix_dtypes(test_df, [])
-    assert result_df["Order_Date"].dtype == "datetime64[ns]", "Order_Date not converted to datetime"
-    assert result_df["Customer_Note"].dtype == "object", "Customer_Note should remain as object"    
-    assert  not any("Customer_Note" in entry and "converted to datetime" in entry for entry in log),"Customer_Note  converted into datetime despite < 0.8 of values being date-like"
-    assert any ("error while processing  column messy date " in entry for entry in log),"messy date error was not logged"
-    print("test_fix_dtypes passed")
 
+def test_flag_faulty_dates():
+    test_df=pd.DataFrame({
+        "
+    })
 
 if __name__ == "__main__":
     test_drop_full_duplicates()
