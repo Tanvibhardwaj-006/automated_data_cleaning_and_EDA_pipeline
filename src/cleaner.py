@@ -1,4 +1,6 @@
 
+import string
+
 import pandas as pd 
 pd.set_option('future.no_silent_downcasting', True)
 
@@ -102,6 +104,18 @@ def flag_faulty_dates(df, log):
 
     return df, log
 
+def normalize_text_columns(df,log):
+    for column in df.columns:
+        if df[column].dtype=='object':
+            uniqueness_ratio = df[column].nunique() / len(df)
+            if uniqueness_ratio>=0.90:
+                log.append(f"column: {column} has high uniqueness ratio ({uniqueness_ratio:.2f}), classifying it as a identifier")
+            else:
+                df[column] = df[column].str.strip().str.lower().str.strip(string.punctuation).str.strip()
+                log.append(f"column: {column} has been normalized")
+    return df,log
+
+
 
 
 if __name__ == "__main__":
@@ -113,9 +127,13 @@ if __name__ == "__main__":
     df1,log=handle_missing_values(df1,log)
     
     df1,log=flag_faulty_dates(df1,log)
+    print(df1['order_status'].unique())
+    df1, log = normalize_text_columns(df1, log)
+    print(df1['order_status'].unique())
+    
     print(log)
 
-print(df1['order_approved_at'].dtype)  
+
     
 
 

@@ -3,7 +3,7 @@ import numpy as np
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
-from cleaner import drop_full_duplicates, fix_dtypes, flag_semi_duplicates, handle_missing_values
+from cleaner import drop_full_duplicates, fix_dtypes, flag_faulty_dates, flag_semi_duplicates, handle_missing_values, normalize_text_columns
 
 def test_drop_full_duplicates():
     test_df = pd.DataFrame({
@@ -97,14 +97,75 @@ def test_fix_dtypes():
         "rapunzel"
     ]
     })
+    result_df ,log = fix_dtypes(test_df, [])
+    assert result_df["Order_Date"].dtype == "datetime64[ns]", "Order_Date not converted to datetime"
+    assert result_df["Customer_Note"].dtype == "object", "Customer_Note should remain as object"    
+    assert  not any("Customer_Note" in entry and "converted to datetime" in entry for entry in log),"Customer_Note  converted into datetime despite < 0.8 of values being date-like"
+    print("test_fix_dtypes passed")
 
 def test_flag_faulty_dates():
     test_df=pd.DataFrame({
-        "
+        "order_purchase_timestamp": pd.to_datetime([
+        "2024-01-01 10:00",
+        "2024-01-02 10:00",
+        "2024-01-03 10:00",
+        "2024-01-04 10:00",
+        "2024-01-05 10:00",
+        "2024-01-06 10:00",
+    ]),
+
+    "order_approved_at": pd.to_datetime([
+        "2024-01-01 11:00",  # Valid
+        "2024-01-02 09:00",   # Faulty: approval BEFORE purchase
+        "2024-01-03 11:00",   # Valid
+        "2024-01-04 11:00",   # Valid
+        "2024-01-05 11:00",   # Valid
+        pd.NaT,               # Missing
+    ]),
+
+    "order_delivered_carrier_date": pd.to_datetime([
+        "2024-01-02 10:00",   # Valid
+        "2024-01-03 10:00",   # Valid
+        "2024-01-03 12:00",   # Valid
+        "2024-01-04 10:30",   # Faulty: approval AFTER carrier
+        "2024-01-06 10:00",   # Valid
+        "2024-01-07 10:00",   # Valid
+    ]),
+
+    "order_delivered_customer_date": pd.to_datetime([
+        "2024-01-03 10:00",   # Valid
+        "2024-01-04 10:00",   # Valid
+        "2024-01-04 12:00",   # Valid
+        "2024-01-05 10:00",   # Valid
+        "2024-01-05 10:00",   # Faulty: carrier AFTER customer delivery
+        pd.NaT,                # Missing
+    ])
     })
+    result_df, log = flag_faulty_dates(test_df, [])
+
+    assert any("Flagged 1 rows where 'order_approved_at' is before 'order_purchase_timestamp'" in entry for entry in log), f"Approval-before-purchase check failed. Log: {log}"
+    assert any("Flagged 1 rows where 'order_approved_at' is after 'order_delivered_carrier_date'" in entry for entry in log), f"Carrier-before-approval check failed. Log: {log}"
+    assert any("Flagged 1 rows where 'order_delivered_carrier_date' is after 'order_delivered_customer_date'" in entry for entry in log), f"Customer-before-carrier check failed. Log: {log}"
+    assert not any("6 rows" in entry or "2 rows" in entry for entry in log), "NaT row may have been incorrectly flagged"
+
+
+def test_normalize_text_columns():
+    test_df = pd.DataFrame({
+    "status": [" Delivered", "shipped ", "CANCELED.", "  processing", "delivered", "Shipped ", "canceled", " Delivered"],
+    "customer_id": ["C001", "C002", "C003", "C004", "C005", "C006", "C007", "C008"]
+})
+    
+    result_df, log = normalize_text_columns(test_df, [])
+    
+    assert result_df["status"].tolist() == ["delivered", "shipped", "canceled", "processing", "delivered", "shipped", "canceled", "delivered"], f"Got {result_df['status'].tolist()}"
+    assert result_df["customer_id"].tolist() == ["C001", "C002", "C003", "C004", "C005", "C006", "C007", "C008"], "Identifier column should not be normalized"
+    assert any("customer_id" in entry and "identifier" in entry for entry in log), "customer_id not flagged as identifier"
+    print("test_normalize_text_columns passed")
 
 if __name__ == "__main__":
     test_drop_full_duplicates()
     test_flag_semi_duplicates()
     test_handle_missing_values()
     test_fix_dtypes()
+    test_flag_faulty_dates()
+    test_normalize_text_columns()
