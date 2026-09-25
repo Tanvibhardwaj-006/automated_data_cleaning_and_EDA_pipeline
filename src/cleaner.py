@@ -89,6 +89,10 @@ def fix_dtypes(df, log):
             
 
 def flag_faulty_dates(df, log):
+    known_cols = {'order_purchase_timestamp', 'order_approved_at', 'order_delivered_carrier_date', 'order_delivered_customer_date'}
+    if not known_cols & set(df.columns):
+        log.append("No known sequential date columns found for this dataset — faulty-date check skipped")
+        return df, log
     for column in df.select_dtypes(include=['datetime64[ns]']).columns:
         if df[column].isnull().any():
             log.append(f"Column '{column}' has NaT values, which may indicate parsing issues or missing dates")
@@ -116,24 +120,48 @@ def normalize_text_columns(df,log):
     return df,log
 
 
+def derive_missing_values(df, log):
+    subset_cols = ['Price Per Unit', 'Quantity', 'Total Spent']
+    if not all(col in df.columns for col in subset_cols):
+        log.append("Derivation columns not found in this dataset — skipping derivation step")
+        return df, log
+
+    mask_price = df['Price Per Unit'].isnull() & df['Quantity'].notnull() & df['Total Spent'].notnull()
+    df.loc[mask_price, 'Price Per Unit'] = df.loc[mask_price, 'Total Spent'] / df.loc[mask_price, 'Quantity']
+    log.append(f"Derived {mask_price.sum()} 'Price Per Unit' values from Total Spent / Quantity")
+
+    mask_quantity = df['Quantity'].isnull() & df['Price Per Unit'].notnull() & df['Total Spent'].notnull()
+    df.loc[mask_quantity, 'Quantity'] = df.loc[mask_quantity, 'Total Spent'] / df.loc[mask_quantity, 'Price Per Unit']
+    log.append(f"Derived {mask_quantity.sum()} 'Quantity' values from Total Spent / Price Per Unit")
+
+    mask_total_spent = df['Total Spent'].isnull() & df['Price Per Unit'].notnull() & df['Quantity'].notnull()
+    df.loc[mask_total_spent, 'Total Spent'] = df.loc[mask_total_spent, 'Price Per Unit'] * df.loc[mask_total_spent, 'Quantity']
+    log.append(f"Derived {mask_total_spent.sum()} 'Total Spent' values from Price Per Unit * Quantity")
+
+    return df, log
+
+
+def clean_dataset(df, key_column, log=None):
+    if log is None:
+        log = []
+    df,log=drop_full_duplicates(df,log)
+    df,log=flag_semi_duplicates(df,key_column,log)
+    df,log=fix_dtypes(df,log)
+    df,log=handle_missing_values(df,log)   
+    df,log=flag_faulty_dates(df,log)
+    df, log = normalize_text_columns(df, log)
+    return df, log
+
+
 
 
 if __name__ == "__main__":
     df1=pd.read_csv(r"C:/Users/Aone/Desktop/retail project/data/raw/olist_orders_dataset.csv")
-    log=[]
-    df1,log=drop_full_duplicates(df1,log)
-    df1,log=flag_semi_duplicates(df1,'order_id',log)
-    df1,log=fix_dtypes(df1,log)
-    df1,log=handle_missing_values(df1,log)
-    
-    df1,log=flag_faulty_dates(df1,log)
-    print(df1['order_status'].unique())
-    df1, log = normalize_text_columns(df1, log)
-    print(df1['order_status'].unique())
-    
+    df1,log=clean_dataset(df1,"order_id")
     print(log)
-
-
+    df2=pd.read_csv(r"C:/Users/Aone/Desktop/retail project/data/raw/retail_store_sales.csv")
+    df2,log=clean_dataset(df2,"Transaction ID")
+    print(log)
     
 
 
