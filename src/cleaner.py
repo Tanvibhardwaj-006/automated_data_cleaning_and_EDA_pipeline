@@ -128,15 +128,22 @@ def derive_missing_values(df, log):
 
     mask_price = df['Price Per Unit'].isnull() & df['Quantity'].notnull() & df['Total Spent'].notnull()
     df.loc[mask_price, 'Price Per Unit'] = df.loc[mask_price, 'Total Spent'] / df.loc[mask_price, 'Quantity']
+    print(f"mask_price matches: {mask_price.sum()}")
     log.append(f"Derived {mask_price.sum()} 'Price Per Unit' values from Total Spent / Quantity")
 
     mask_quantity = df['Quantity'].isnull() & df['Price Per Unit'].notnull() & df['Total Spent'].notnull()
     df.loc[mask_quantity, 'Quantity'] = df.loc[mask_quantity, 'Total Spent'] / df.loc[mask_quantity, 'Price Per Unit']
+    print(f"mask_quantity matches: {mask_quantity.sum()}")
     log.append(f"Derived {mask_quantity.sum()} 'Quantity' values from Total Spent / Price Per Unit")
 
     mask_total_spent = df['Total Spent'].isnull() & df['Price Per Unit'].notnull() & df['Quantity'].notnull()
     df.loc[mask_total_spent, 'Total Spent'] = df.loc[mask_total_spent, 'Price Per Unit'] * df.loc[mask_total_spent, 'Quantity']
+    print(f"mask_total_spent matches: {mask_total_spent.sum()}")
     log.append(f"Derived {mask_total_spent.sum()} 'Total Spent' values from Price Per Unit * Quantity")
+
+    both_missing = df['Quantity'].isnull() & df['Total Spent'].isnull()
+    if both_missing.any():
+        log.append(f"{both_missing.sum()} rows have both 'Quantity' and 'Total Spent' missing simultaneously — cannot derive either from one equation with two unknowns")
 
     return df, log
 
