@@ -49,14 +49,14 @@ def handle_missing_values(df,log):
                 elif df[column].dtype in ['int64','float64']:
                     uniqueness_ratio = df[column].nunique() / len(df)
                     if uniqueness_ratio>=0.90:
-                        log.append(f"Flagged column '{column}' — {null_perc:.2f}% missing, high uniqueness ratio ({uniqueness_ratio:.2f}), needs manual review")
+                        log.append(f"Flagged column '{column}' — {null_perc:.2f}%  missing, high uniqueness ratio ({uniqueness_ratio:.2f}), needs manual review")
                     else:
                         median_val = df[column].median()
                         df[column] = df[column].fillna(median_val)
-                        log.append(f"Filled {missing_values[column]} nulls in '{column}' with median ({median_val})")
+                        log.append(f"Filled {missing_values[column]}  nulls in '{column}' with median ({median_val})")
                 else:
                     df[column] = df[column].fillna('Unknown')
-                    log.append(f"Column '{column}' has {null_perc:.2f}% missing values — filled with 'Unknown'")
+                    log.append(f"Column '{column}' has {null_perc:.2f}%  missing values — filled with 'Unknown'")
         elif null_perc == 0:
             log.append(f"Column '{column}' has no missing values")
     return df, log
@@ -113,7 +113,7 @@ def normalize_text_columns(df,log):
         if df[column].dtype=='object':
             uniqueness_ratio = df[column].nunique() / len(df)
             if uniqueness_ratio>=0.90:
-                log.append(f"column: {column} has high uniqueness ratio ({uniqueness_ratio:.2f}), classifying it as a identifier")
+                log.append(f"column: {column}  has high uniqueness ratio ({uniqueness_ratio:.2f}), classifying it as a identifier")
             else:
                 df[column] = df[column].str.strip().str.lower().str.strip(string.punctuation).str.strip()
                 log.append(f"column: {column} has been normalized")
@@ -147,6 +147,7 @@ def clean_dataset(df, key_column, log=None):
     df,log=drop_full_duplicates(df,log)
     df,log=flag_semi_duplicates(df,key_column,log)
     df,log=fix_dtypes(df,log)
+    df,log=derive_missing_values(df,log)
     df,log=handle_missing_values(df,log)   
     df,log=flag_faulty_dates(df,log)
     df, log = normalize_text_columns(df, log)
@@ -163,7 +164,6 @@ if __name__ == "__main__":
     df2,log=clean_dataset(df2,"Transaction ID")
     print(log)
     
-
 
 
 
