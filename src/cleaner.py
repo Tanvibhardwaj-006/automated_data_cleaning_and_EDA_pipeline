@@ -1,7 +1,8 @@
 
 import string
 
-import pandas as pd 
+import pandas as pd
+import ydata_profiling 
 pd.set_option('future.no_silent_downcasting', True)
 
 # completeness 
@@ -160,17 +161,34 @@ def clean_dataset(df, key_column, log=None):
     df, log = normalize_text_columns(df, log)
     return df, log
 
+from ydata_profiling import ProfileReport 
 
+def generate_eda_report(df, dataset_name, log, output_dir="C:/Users/Aone/Desktop/retail project/reports"):
+     
+    report = ProfileReport(df, minimal=True)
+    output_path = f"C:/Users/Aone/Desktop/retail project/reports/{dataset_name}_eda_report.html"
+    report.to_file(output_path)
+    log.append(f"EDA report generated  for {dataset_name} and saved to {output_path}")
+
+    return log
 
 
 if __name__ == "__main__":
-    df1=pd.read_csv(r"C:/Users/Aone/Desktop/retail project/data/raw/olist_orders_dataset.csv")
-    df1,log=clean_dataset(df1,"order_id")
-    print(log)
-    df2=pd.read_csv(r"C:/Users/Aone/Desktop/retail project/data/raw/retail_store_sales.csv")
-    df2,log=clean_dataset(df2,"Transaction ID")
-    print(log)
+
+   if __name__ == "__main__":
+    import argparse
     
+    parser = argparse.ArgumentParser(description="Automated data cleaning pipeline")
+    parser.add_argument("--input", required=True, help="Path to the raw CSV file")
+    parser.add_argument("--key", required=True, help="Column name to use as the unique key for duplicate detection")
+    parser.add_argument("--output", required=True, help="Path to save the cleaned CSV")
+    args = parser.parse_args()
 
-
-
+    df = pd.read_csv(args.input)
+    df, log = clean_dataset(df, args.key)
+    df.to_csv(args.output, index=False)
+    
+    dataset_name = args.input.split("/")[-1].replace(".csv", "")
+    log = generate_eda_report(df, dataset_name, log)
+    
+    print(log)
