@@ -54,10 +54,10 @@ def handle_missing_values(df,log):
                     else:
                         median_val = df[column].median()
                         df[column] = df[column].fillna(median_val)
-                        log.append(f"Filled {missing_values[column]}  nulls in '{column}' with median ({median_val})")
+                        log.append(f"Filled {missing_values[column]} nulls in '{column}' with median ({median_val})")
                 else:
                     df[column] = df[column].fillna('Unknown')
-                    log.append(f"Column '{column}' has {null_perc:.2f}%  missing values — filled with 'Unknown'")
+                    log.append(f"Column '{column}' has {null_perc:.2f}% missing values — filled with 'Unknown'")
         elif null_perc == 0:
             log.append(f"Column '{column}' has no missing values")
     return df, log
@@ -114,7 +114,7 @@ def normalize_text_columns(df,log):
         if df[column].dtype=='object':
             uniqueness_ratio = df[column].nunique() / len(df)
             if uniqueness_ratio>=0.90:
-                log.append(f"column: {column}  has high uniqueness ratio ({uniqueness_ratio:.2f}), classifying it as a identifier")
+                log.append(f"column: {column} has high uniqueness ratio ({uniqueness_ratio:.2f}), classifying it as an identifier")
             else:
                 df[column] = df[column].str.strip().str.lower().str.strip(string.punctuation).str.strip()
                 log.append(f"column: {column} has been normalized")
@@ -129,17 +129,14 @@ def derive_missing_values(df, log):
 
     mask_price = df['Price Per Unit'].isnull() & df['Quantity'].notnull() & df['Total Spent'].notnull()
     df.loc[mask_price, 'Price Per Unit'] = df.loc[mask_price, 'Total Spent'] / df.loc[mask_price, 'Quantity']
-    print(f"mask_price matches: {mask_price.sum()}")
     log.append(f"Derived {mask_price.sum()} 'Price Per Unit' values from Total Spent / Quantity")
 
     mask_quantity = df['Quantity'].isnull() & df['Price Per Unit'].notnull() & df['Total Spent'].notnull()
     df.loc[mask_quantity, 'Quantity'] = df.loc[mask_quantity, 'Total Spent'] / df.loc[mask_quantity, 'Price Per Unit']
-    print(f"mask_quantity matches: {mask_quantity.sum()}")
     log.append(f"Derived {mask_quantity.sum()} 'Quantity' values from Total Spent / Price Per Unit")
 
     mask_total_spent = df['Total Spent'].isnull() & df['Price Per Unit'].notnull() & df['Quantity'].notnull()
     df.loc[mask_total_spent, 'Total Spent'] = df.loc[mask_total_spent, 'Price Per Unit'] * df.loc[mask_total_spent, 'Quantity']
-    print(f"mask_total_spent matches: {mask_total_spent.sum()}")
     log.append(f"Derived {mask_total_spent.sum()} 'Total Spent' values from Price Per Unit * Quantity")
 
     both_missing = df['Quantity'].isnull() & df['Total Spent'].isnull()
@@ -166,9 +163,9 @@ from ydata_profiling import ProfileReport
 def generate_eda_report(df, dataset_name, log, output_dir="C:/Users/Aone/Desktop/retail project/reports"):
      
     report = ProfileReport(df, minimal=True)
-    output_path = f"C:/Users/Aone/Desktop/retail project/reports/{dataset_name}_eda_report.html"
+    output_path = output_path = f"{output_dir}/{dataset_name}_eda_report.html"
     report.to_file(output_path)
-    log.append(f"EDA report generated  for {dataset_name} and saved to {output_path}")
+    log.append(f"EDA report generated for {dataset_name} and saved to {output_path}")
 
     return log
 
@@ -189,6 +186,6 @@ if __name__ == "__main__":
     df.to_csv(args.output, index=False)
     
     dataset_name = args.input.split("/")[-1].replace(".csv", "")
-    log = generate_eda_report(df, dataset_name, log)
+    log = generate_eda_report(df, dataset_name, log, output_dir="reports")
     
     print(log)
