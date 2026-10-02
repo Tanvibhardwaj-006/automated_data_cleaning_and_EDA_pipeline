@@ -3,7 +3,7 @@ import numpy as np
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
-from cleaner import drop_full_duplicates, fix_dtypes, flag_faulty_dates, flag_semi_duplicates, handle_missing_values, normalize_text_columns
+from cleaner import drop_full_duplicates, fix_dtypes, flag_faulty_dates, flag_semi_duplicates, handle_missing_values, normalize_text_columns,derive_missing_values
 
 def test_drop_full_duplicates():
     test_df = pd.DataFrame({
@@ -162,6 +162,19 @@ def test_normalize_text_columns():
     assert any("customer_id" in entry and "identifier" in entry for entry in log), "customer_id not flagged as identifier"
     print("test_normalize_text_columns passed")
 
+def test_derive_missing_values():
+    test_df = pd.DataFrame({
+    "Price Per Unit": [np.nan, 10.0, 8.0],
+    "Quantity": [4, np.nan, 3],
+    "Total Spent": [20.0, np.nan, 24.0]
+})
+    result_df, log = derive_missing_values(test_df, [])
+
+    assert result_df["Price Per Unit"].iloc[0] == 5.0, f"Expected 5.0, got {result_df['Price Per Unit'].iloc[0]}"
+    assert pd.isna(result_df["Quantity"].iloc[1]), f"Expected nan, got {result_df['Quantity'].iloc[1]}"
+    assert pd.isna(result_df["Total Spent"].iloc[1]), f"Expected nan, got {result_df['Total Spent'].iloc[1]}"
+    print("test_derive_missing_values passed")
+
 if __name__ == "__main__":
     test_drop_full_duplicates()
     test_flag_semi_duplicates()
@@ -169,3 +182,4 @@ if __name__ == "__main__":
     test_fix_dtypes()
     test_flag_faulty_dates()
     test_normalize_text_columns()
+    test_derive_missing_values()
