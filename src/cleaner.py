@@ -4,6 +4,7 @@ import string
 import pandas as pd
 import ydata_profiling 
 pd.set_option('future.no_silent_downcasting', True)
+from profiler import profile_dataset
 
 # completeness 
 
@@ -114,7 +115,7 @@ def normalize_text_columns(df,log):
         if df[column].dtype=='object':
             uniqueness_ratio = df[column].nunique() / len(df)
             if uniqueness_ratio>=0.90:
-                log.append(f"column: {column} has high uniqueness ratio ({uniqueness_ratio:.2f}), classifying it as an identifier")
+                log.append(f"column: {column}  has high uniqueness ratio ({uniqueness_ratio:.2f}), classifying it as an identifier")
             else:
                 df[column] = df[column].str.strip().str.lower().str.strip(string.punctuation).str.strip()
                 log.append(f"column: {column} has been normalized")
@@ -171,10 +172,8 @@ def generate_eda_report(df, dataset_name, log, output_dir="C:/Users/Aone/Desktop
 
 
 if __name__ == "__main__":
-
-   if __name__ == "__main__":
-    import argparse
     
+    import argparse
     parser = argparse.ArgumentParser(description="Automated data cleaning pipeline")
     parser.add_argument("--input", required=True, help="Path to the raw CSV file")
     parser.add_argument("--key", required=True, help="Column name to use as the unique key for duplicate detection")
@@ -182,10 +181,18 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     df = pd.read_csv(args.input)
-    df, log = clean_dataset(df, args.key)
-    df.to_csv(args.output, index=False)
-    
     dataset_name = args.input.split("/")[-1].replace(".csv", "")
+
+    before_profile = profile_dataset(df, f"{dataset_name} (before)")
+
+    df, log = clean_dataset(df, args.key)
+
+    after_profile = profile_dataset(df, f"{dataset_name} (after)")
+
+    df.to_csv(args.output, index=False)
     log = generate_eda_report(df, dataset_name, log, output_dir="reports")
-    
+    log_path = args.output.replace(".csv", "_log.txt")
+    with open(log_path, "w") as f:
+        for entry in log:
+            f.write(entry + "\n")
     print(log)
