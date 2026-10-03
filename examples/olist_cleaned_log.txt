@@ -1,0 +1,27 @@
+ dropped 0 fully duplicated rows 99441 -> 99441
+Flagged 0 semi-duplicate rows (same 'order_id', differing other values)
+Converted column 'order_purchase_timestamp' to datetime (success rate: 1.00, 0 values could not be parsed and became NaT)
+Converted column 'order_approved_at' to datetime (success rate: 1.00, 0 values could not be parsed and became NaT)
+Converted column 'order_delivered_carrier_date' to datetime (success rate: 0.98, 0 values could not be parsed and became NaT)
+Converted column 'order_delivered_customer_date' to datetime (success rate: 0.97, 0 values could not be parsed and became NaT)
+Converted column 'order_estimated_delivery_date' to datetime (success rate: 1.00, 0 values could not be parsed and became NaT)
+Derivation columns not found in this dataset — skipping derivation step
+Column 'order_id' has no missing values
+Column 'customer_id' has no missing values
+Column 'order_status' has no missing values
+Column 'order_purchase_timestamp' has no missing values
+Column 'order_approved_at' has 160 missing dates (NaT) — left as-is, missingness treated as meaningful
+Column 'order_delivered_carrier_date' has 1783 missing dates (NaT) — left as-is, missingness treated as meaningful
+Column 'order_delivered_customer_date' has 2965 missing dates (NaT) — left as-is, missingness treated as meaningful
+Column 'order_estimated_delivery_date' has no missing values
+Column 'is_semi_duplicate' has no missing values
+Column 'order_approved_at' has NaT values, which may indicate parsing issues or missing dates
+Column 'order_delivered_carrier_date' has NaT values, which may indicate parsing issues or missing dates
+Column 'order_delivered_customer_date' has NaT values, which may indicate parsing issues or missing dates
+Flagged 0 rows where 'order_approved_at' is before 'order_purchase_timestamp'
+Flagged 1359 rows where 'order_approved_at' is after 'order_delivered_carrier_date'
+Flagged 23 rows where 'order_delivered_carrier_date' is after 'order_delivered_customer_date'
+column: order_id  has high uniqueness ratio (1.00), classifying it as an identifier
+column: customer_id  has high uniqueness ratio (1.00), classifying it as an identifier
+column: order_status has been normalized
+EDA report generated for olist_orders_dataset and saved to reports/olist_orders_dataset_eda_report.html

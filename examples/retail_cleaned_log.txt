@@ -1,0 +1,27 @@
+ dropped 0 fully duplicated rows 12575 -> 12575
+Flagged 0 semi-duplicate rows (same 'Transaction ID', differing other values)
+Converted column 'Transaction Date' to datetime (success rate: 1.00, 0 values could not be parsed and became NaT)
+Derived 609 'Price Per Unit' values from Total Spent / Quantity
+Derived 0 'Quantity' values from Total Spent / Price Per Unit
+Derived 0 'Total Spent' values from Price Per Unit * Quantity
+604 rows have both 'Quantity' and 'Total Spent' missing simultaneously — cannot derive either from one equation with two unknowns
+Column 'Transaction ID' has no missing values
+Column 'Customer ID' has no missing values
+Column 'Category' has no missing values
+Column 'Item' has 9.65% missing values — filled with 'Unknown'
+Column 'Price Per Unit' has no missing values
+Filled 604 nulls in 'Quantity' with median (6.0)
+Filled 604 nulls in 'Total Spent' with median (108.5)
+Column 'Payment Method' has no missing values
+Column 'Location' has no missing values
+Column 'Transaction Date' has no missing values
+Filled 4199 nulls in 'Discount Applied' with False (boolean-like column, missing interpreted as False)
+Column 'is_semi_duplicate' has no missing values
+No known sequential date columns found for this dataset — faulty-date check skipped
+column: Transaction ID  has high uniqueness ratio (1.00), classifying it as an identifier
+column: Customer ID has been normalized
+column: Category has been normalized
+column: Item has been normalized
+column: Payment Method has been normalized
+column: Location has been normalized
+EDA report generated for retail_store_sales and saved to reports/retail_store_sales_eda_report.html
