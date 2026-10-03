@@ -58,7 +58,7 @@ def handle_missing_values(df,log):
                         log.append(f"Filled {missing_values[column]} nulls in '{column}' with median ({median_val})")
                 else:
                     df[column] = df[column].fillna('Unknown')
-                    log.append(f"Column '{column}' has {null_perc:.2f}% missing values — filled with 'Unknown'")
+                    log.append(f"Column '{column}' has {missing_values[column]} missing values {null_perc:.2f}%  — filled with 'Unknown'")
         elif null_perc == 0:
             log.append(f"Column '{column}' has no missing values")
     return df, log
@@ -192,7 +192,7 @@ if __name__ == "__main__":
     df.to_csv(args.output, index=False)
     log = generate_eda_report(df, dataset_name, log, output_dir="reports")
     log_path = args.output.replace(".csv", "_log.txt")
-    with open(log_path, "w") as f:
+    with open(log_path, "w", encoding='utf-8') as f:
         for entry in log:
             f.write(entry + "\n")
     print(log)
