@@ -12,7 +12,7 @@ One command produces three outputs: a cleaned CSV, a plain-text log of every act
 
 Most cleaning scripts are tuned to a single file. They work on that file and break on the next one. I wanted a pipeline that decides what to do by looking at the **shape of the data** (unique-value counts, uniqueness ratios, date-parse success rates) rather than hardcoded column names, and that proves what it changed instead of asking to be trusted.
 
-## What it does
+## what it does
 
 | Pillar | What the pipeline does |
 |---|---|
