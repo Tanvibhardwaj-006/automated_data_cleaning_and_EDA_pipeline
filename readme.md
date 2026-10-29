@@ -111,7 +111,7 @@ examples/            sample log, cleaned file and report
 - The Quantity / Price / Total derivation is specific to the retail schema.
 - Identifier detection uses a uniqueness ratio, which can misclassify a text column on very small samples.
 - Semi-duplicate detection is tested on a small hand-built table, not yet on a large corrupted file.
-- Tests for the >40% missing flag, the 100%-null column drop, and the date-conversion error path are still missing.
+- Tests for the >40% missing flag, the 100% null column drop, and the date-conversion error path are still missing.
 - Derivation divides by Quantity and does not guard against zero. No zero quantities exist in the tested data.
 - The EDA report runs in minimal mode for speed. `ydata-profiling` currently prints a deprecation warning.
 
